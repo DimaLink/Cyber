@@ -15,6 +15,9 @@ Game::Game()
 	path = nullptr;
 	scriptPath = nullptr;
 	targetNode = nullptr;
+	savePath = nullptr;
+
+	isGameplay = true;
 
 	initPaths();
 	initWordList();
@@ -23,7 +26,10 @@ Game::Game()
 
 Game::~Game()
 {
-	/*nothing to do*/
+	clearPath();
+	clearScriptPath();
+	clearSavePath();
+	clearTargetNode();
 }
 
 void Game::setLanguage(ELanguage _language)
@@ -64,6 +70,15 @@ void Game::setPath(char * _path)
 	}
 }
 
+void Game::clearPath()
+{
+	if (path != nullptr)
+	{
+		delete[] path;
+		path = nullptr;
+	}
+}
+
 char * Game::getPath()
 {
 	return path;
@@ -97,16 +112,64 @@ void Game::setScriptPath(char *  _scriptPath)
 
 }
 
+void  Game::clearScriptPath()
+{
+	if (scriptPath != nullptr)
+	{
+		delete[] scriptPath;
+		scriptPath = nullptr;
+	}
+}
+
 char * Game::getScriptPath()
 {
 	return scriptPath;
+}
+
+
+void Game::setSavePath(char * _savePath)
+{
+	if (savePath != nullptr)
+	{
+		delete[] _savePath;
+		savePath = nullptr;
+	}
+
+	if (_savePath != nullptr)
+	{
+		int _savePathLength = strlen(_savePath);
+		if (_savePathLength > 0)
+		{
+			savePath = new char[_savePathLength + 1];
+			strcpy_s(savePath, _savePathLength + 1, _savePath);
+		}
+		else
+		{
+			/*nothing todo*/
+		}
+	}
+}
+
+char * Game::getSavePath()
+{
+	return savePath;
+}
+
+void Game::clearSavePath()
+{
+	if (savePath != nullptr)
+	{
+		delete[] savePath;
+		savePath = nullptr;
+	}
 }
 
 void Game::initPaths()
 {
 
 	char buffer[4096] = "";
-
+	char dataPathBuffer[4096] = "";
+	char savePathBuffer[4096] = "";
 	GetModuleFileNameA(NULL, buffer, sizeof(buffer) / sizeof(*(buffer + 0)));
 
 	int bufferLength = strlen(buffer);
@@ -129,21 +192,32 @@ void Game::initPaths()
 		default:
 		case ELanguage::RUSSIAN:
 		{
-			strcat_s(buffer,4096,"\\Data\\ScriptRus.txt");
-			setScriptPath(buffer);
+			strcpy_s(dataPathBuffer,4096, buffer);
+			strcat_s(dataPathBuffer, 4096, "\\Data\\ScriptRus.txt");
+			setScriptPath(dataPathBuffer);
 		}
 		break;
 
 		case ELanguage::ENGLISH:
 		{
-			strcat_s(buffer, 4096, "\\Data\\ScriptEng.txt");
-			setScriptPath(buffer);
+			strcpy_s(dataPathBuffer, 4096, buffer);
+			strcat_s(dataPathBuffer, 4096, "\\Data\\ScriptEng.txt");
+			setScriptPath(dataPathBuffer);
 		}
 		break;
-
 		}
+
+		strcpy_s(savePathBuffer, 4096, buffer);
+		strcat_s(savePathBuffer, 4096, "\\Save\\");
+		setSavePath(savePathBuffer);
+ 
+ 
+
+
+
 	}
 }
+
 
 void Game::initWordList()
 {
@@ -176,23 +250,42 @@ void Game::askUserCommand()
 		std::cout << gameplayText.getEnterCommand();
 		//std::cin >> userInput ;
 		std::cin.getline(userInput, 64);
-		checkInputWithWords(userInput);
-		if ((userInputCommand.getAction() == EActions::NO_ACTION) || (userInputCommand.getObject() == EObjects::NO_OBJECT))
-		{
-			isAskUser = true;
-			system("cls");
-			manageTagText(currentNode.getContent());
-		}
-		else
-		{
-			isAskUser = false;
-		}
+
+
+			checkInputWithWords(userInput);
+			if ((userInputCommand.getAction() == EActions::NO_ACTION) || (userInputCommand.getObject() == EObjects::NO_OBJECT))
+			{
+				
+				ECommands command = manageCommands(userInput);
+
+				if (command == ECommands::GAME_EXIT)
+				{
+					isAskUser = false;
+				}
+				else
+				{
+					isAskUser = true;
+					system("cls");
+					manageTagText(currentNode.getContent());
+				}
+
+
+			}
+			else
+			{
+				isAskUser = false;
+			}
+		
+
 	}
 
 
-
-
 }
+
+
+
+
+
 
 void Game::checkInputWithWords( char *  _input)
 {
@@ -395,6 +488,77 @@ EObjects Game::checkWordWithObjectList(char * _word)
 		}
 		return EObjects::NO_OBJECT;
 	}
+}
+
+ECommands Game::manageCommands(char * _possibleCommand)
+{
+
+	ECommands command = ECommands::NO_COMMAND;
+
+	if (_possibleCommand != nullptr)
+	{
+		int _possibleCommandLength = strlen(_possibleCommand);
+		if (_possibleCommandLength > 0)
+		{
+			
+			command = checkWordWithCommandList(_possibleCommand);
+
+			if (command != ECommands::NO_COMMAND)
+			{
+				switch (command)
+				{
+				default:
+				{
+				/*nothing to do*/
+				}
+				break;
+
+				case ECommands::GAME_EXIT:
+				{
+					isGameplay = false;
+				}
+				break;
+
+				case ECommands::SOUND_OFF:
+				{
+					if (soundPlayer.getIsSoundOn() == true)
+					{
+						soundPlayer.setIsSoundOn(false);
+						soundPlayer.stopSound();
+					}
+				}
+				break;
+
+				case ECommands::SOUND_ON:
+				{
+					if (soundPlayer.getIsSoundOn() == false)
+					{
+						soundPlayer.setIsSoundOn(true);
+						soundPlayer.playSound();
+					}
+				}
+				break;
+
+				case ECommands::GAME_LOAD:
+				{
+
+				}
+				break;
+
+				case ECommands::GAME_SAVE:
+				{
+					manageTagSave();
+				}
+				break;
+
+
+				}
+
+				
+			}
+		}
+	}
+	return command;
 }
 
 
@@ -797,6 +961,12 @@ void Game::manageNodeReactionContent(char * _content)
 								startTagPosition = 0;
 
 							}
+							else
+							{
+
+							}
+
+
 						}
 
 						delete[] tag;
@@ -1206,6 +1376,52 @@ void Game::manageTagFunction (char *_function)
 	}
 }
 
+void Game::manageTagSave()
+{
+	char userInput[16] = "";
+	int userInputLength = 0;
+
+	system("cls");
+	std::cout << gameplayText.getSaveMenu() << std::endl;
+	std::cout << gameplayText.getEnterSaveFileName();
+	
+	std::cin.getline(userInput,16);
+	std::cout << std::endl;
+	
+	FILE * file = nullptr;
+	
+	userInputLength = strlen(userInput);
+
+
+
+	if (userInputLength > 0)
+	{
+		char * saveFilePath = nullptr;
+		int saveFilePathLength = strlen(savePath) + userInputLength + strlen(saveExtension);
+		saveFilePath = new char[saveFilePathLength +1];
+		*(saveFilePath + 0) = '\0';
+		strcpy_s(saveFilePath, saveFilePathLength + 1, savePath);
+		strcat_s(saveFilePath, saveFilePathLength + 1, userInput);
+		strcat_s(saveFilePath, saveFilePathLength + 1, saveExtension);
+
+		if (fopen_s(&file, saveFilePath, "w") == 0)
+		{
+			fwrite(currentNode.getName(), sizeof(char), strlen(currentNode.getName()), file);
+			fclose(file);
+
+			std::cout << gameplayText.getGameSaved();
+		}
+		else
+		{
+			std::cout << gameplayText.getErrorCannotSave();
+		}
+
+	}
+	std::cout << std::endl;
+	manageTagPressAnyKey();
+	system("cls");
+}
+
 void Game::manageTagPressAnyKey()
 {
 	//std::cout << gameplayText.getPressAnyKey();
@@ -1215,7 +1431,7 @@ void Game::manageTagPressAnyKey()
 
 void Game::runGameplay()
 {
-	bool isGameplay = true;
+	
 	EPreactionsTag preactionsTag = EPreactionsTag::NO_PREACTION;
 	while (isGameplay == true)
 	{
@@ -2013,15 +2229,15 @@ void initRussianWordList(Game * _game)
 	clear2DimensionCharArray(&charValues,6);
 
 	CommandWord commandWord(const_cast <char *>("Звук Вкл"), ECommands::SOUND_ON);
-	_game->actionWordList.addElement(actionWord);
+	_game->commandWordList.addElement(commandWord);
 	commandWord.setData(const_cast <char *>("Звук Выкл"), ECommands::SOUND_OFF);
-	_game->actionWordList.addElement(actionWord);
+	_game->commandWordList.addElement(commandWord);
 	commandWord.setData(const_cast <char *>("Выход"), ECommands::GAME_EXIT);
-	_game->actionWordList.addElement(actionWord);
+	_game->commandWordList.addElement(commandWord);
 	commandWord.setData(const_cast <char *>("Сохр"), ECommands::GAME_SAVE);
-	_game->actionWordList.addElement(actionWord);
+	_game->commandWordList.addElement(commandWord);
 	commandWord.setData(const_cast <char *>("Загр"), ECommands::GAME_LOAD);
-	_game->actionWordList.addElement(actionWord);
+	_game->commandWordList.addElement(commandWord);
 
 }
 

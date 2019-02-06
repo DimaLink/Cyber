@@ -10,6 +10,7 @@ class CommandWord
 public:
 	CommandWord();
 	CommandWord(char * , ECommands);
+	CommandWord(const CommandWord & _copy);
 	~CommandWord();
 
 	void setWord(char *);

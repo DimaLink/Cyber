@@ -31,6 +31,9 @@ const char STORYEND[] = "STORYEND";
 const char SOUND[] = "SOUND";
 
 
+
+const char saveExtension[] = ".CybSav";
+
 const char  COLORS[16][12] =      { { "LightGrey" },{ "LightBlue" },{ "LightGreen" },{ "LightCyan" },{ "LightRed" },{ "LightPurple" },{ "Black" },{ "Grey" },
 								    { "White" },{ "Blue" },{ "Green" },{ "Cyan" },{ "Red" },{ "Purple" },{ "Orange" },{ "Yellow" } };
 
@@ -47,9 +50,15 @@ public:
 
 	void setPath( char *);
 	char * getPath();
+	void clearPath();
 
 	void setScriptPath(char *);
 	char * getScriptPath();
+	void clearScriptPath();
+
+	void setSavePath(char *);
+	char * getSavePath();
+	void clearSavePath();
 
 	void initPaths();
 	void initWordList();
@@ -75,9 +84,14 @@ public:
 	void function_07();
 
 private:
+
+	bool isGameplay;
+	
+
 	ELanguage language;
 	char * path;
 	char * scriptPath;
+	char *savePath;
 
 	GameplayText gameplayText;
 	LanguageSentence userInputCommand;
@@ -105,13 +119,15 @@ private:
 	void manageNodeActionContent(char *);
 	EPreactionsTag manageNodePreActionContent(char * _content);
 
+	ECommands  manageCommands(char * );
+
 	void manageTagText(char *);
 	void manageTagAction(char *);
 	bool manageTagGoto(char *);
 	void manageTagFunction(char *);
 	void manageTagPressAnyKey();
 	void manageTagSound(char *);
-
+	void manageTagSave();
 
 
 	WORD getForegroundColor(char *);

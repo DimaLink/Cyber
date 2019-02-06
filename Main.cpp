@@ -19,7 +19,7 @@ int main()
 	//game.function_02();
 	//game.function_07();
 	game.runGameplay();
-
+	
 	system("pause");
 	return 0;
 }

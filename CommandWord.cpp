@@ -14,6 +14,12 @@ CommandWord::CommandWord(char * _word, ECommands _command)
 	setCommand(_command);
 }
 
+CommandWord::CommandWord(const CommandWord & _copy)
+	:CommandWord()
+{
+	setData(_copy.word, _copy.command);
+}
+
 CommandWord::~CommandWord()
 {
 	clearWord();
